@@ -22,7 +22,7 @@ Q1: Find the titles of all movies directed by Steven Spielberg.
 
 Select title
 From Movie
-Where director='Steven Spielberg'
+Where director='Steven Spielberg';
 
 -----------------------------------------------------------------------------
 
@@ -32,7 +32,7 @@ Q2: Find all years that have a movie that received a rating of 4 or 5, and
 Select distinct year
 From Movie, Rating
 Where Movie.mID = Rating.mID and (stars = 4 or stars = 5)
-Order by year
+Order by year;
 
 -----------------------------------------------------------------------------
 
@@ -43,7 +43,7 @@ From Movie
 Except
 Select title 
 From Movie, Rating 
-Where Movie.mID = Rating.mID and stars is not NULL
+Where Movie.mID = Rating.mID and stars is not NULL;
 
 -----------------------------------------------------------------------------
 
@@ -52,7 +52,7 @@ Q4: Some reviewers didn't provide a date with their rating. Find the names of
 
 Select distinct name
 From Reviewer Rv, Rating Rt
-Where Rv.rID = Rt.rID and ratingDate is Null
+Where Rv.rID = Rt.rID and ratingDate is Null;
 
 -----------------------------------------------------------------------------
 
@@ -63,7 +63,7 @@ Q5: Write a query to return the ratings data in a more readable format:
 Select name, title, stars, ratingDate
 From Movie M, Reviewer Rv, Rating Rt
 Where M.mID = Rt.mID and Rv.rID = Rt.rID 
-Order by name, title, stars
+Order by name, title, stars;
 
 -----------------------------------------------------------------------------
 
@@ -76,7 +76,7 @@ From Reviewer Rv, Rating Rt1, Rating Rt2, Movie Mv
 Where Rv.rID = Rt1.rID and Rv.rID = Rt2.rID 
     and Rt1.mID = Rt2.mID and Rt1.mID = Mv.mID 
     and Rt1.ratingDate < Rt2.ratingDate 
-    and Rt1.stars < Rt2.stars
+    and Rt1.stars < Rt2.stars;
 
 -----------------------------------------------------------------------------
 
@@ -84,7 +84,12 @@ Q7: For each movie that has at least one rating, find the highest number of
     stars that movie received. Return the movie title and number of stars. 
     Sort by movie title.
 
-
+Select distinct title, R1.stars
+From Movie, Rating R1
+Where Movie.mID = R1.mID
+       and
+      not exists (Select * from Rating R2
+                  where R2.mID = R1.mID and R2.rID <> R1.rID and R2.stars > R1.stars);
 
 -----------------------------------------------------------------------------
 
@@ -92,7 +97,10 @@ Q8: For each movie, return the title and the 'rating spread', that is, the
     difference between highest and lowest ratings given to that movie. Sort by 
     rating spread from highest to lowest, then by movie title. 
 
-
+Select title, max(stars) - min(stars) as spread
+From Movie join Rating using(mID)
+Group By title
+Order by spread desc, title;
 
 -----------------------------------------------------------------------------
 
@@ -102,6 +110,15 @@ Q9: Find the difference between the average rating of movies released before
     averages for movies before 1980 and movies after. Don't just calculate the 
     overall average rating before and after 1980.) 
 
-
+Select avg(preAvgs) - avg(postAvgs)
+From
+    (Select avg(stars) as preAvgs
+    From Rating join Movie 
+    On Rating.mID = Movie.mID and Movie.year < 1980
+    Group By title) as pre1980,
+    (Select avg(stars) as postAvgs
+    From Rating join Movie 
+    On Rating.mID = Movie.mID and Movie.year > 1980
+    Group By title) as post1980;
 
 -----------------------------------------------------------------------------
