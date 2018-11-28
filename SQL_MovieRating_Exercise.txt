@@ -1,0 +1,107 @@
+You've started a new movie-rating website, and you've been collecting data 
+on reviewers' ratings of various movies. There's not much data yet, but you 
+can still try out some interesting queries. Here's the schema: 
+
+Movie ( mID, title, year, director ) 
+English: There is a movie with ID number mID, a title, a release year, and 
+	 a director. 
+
+Reviewer ( rID, name ) 
+English: The reviewer with ID number rID has a certain name. 
+
+Rating ( rID, mID, stars, ratingDate ) 
+English: The reviewer rID gave the movie mID a number of stars rating (1-5) 
+	 on a certain ratingDate. 
+
+Your queries are executed using SQLite, so you must conform to the SQL 
+constructs supported by SQLite.
+
+-----------------------------------------------------------------------------
+
+Q1: Find the titles of all movies directed by Steven Spielberg. 
+
+Select title
+From Movie
+Where director='Steven Spielberg'
+
+-----------------------------------------------------------------------------
+
+Q2: Find all years that have a movie that received a rating of 4 or 5, and 
+    sort them in increasing order. 
+
+Select distinct year
+From Movie, Rating
+Where Movie.mID = Rating.mID and (stars = 4 or stars = 5)
+Order by year
+
+-----------------------------------------------------------------------------
+
+Q3: Find the titles of all movies that have no ratings. 
+
+Select title 
+From Movie
+Except
+Select title 
+From Movie, Rating 
+Where Movie.mID = Rating.mID and stars is not NULL
+
+-----------------------------------------------------------------------------
+
+Q4: Some reviewers didn't provide a date with their rating. Find the names of 
+    all reviewers who have ratings with a NULL value for the date. 
+
+Select distinct name
+From Reviewer Rv, Rating Rt
+Where Rv.rID = Rt.rID and ratingDate is Null
+
+-----------------------------------------------------------------------------
+
+Q5: Write a query to return the ratings data in a more readable format: 
+    reviewer name, movie title, stars, and ratingDate. Also, sort the data, 
+    first by reviewer name, then by movie title, and lastly by number of stars. 
+
+Select name, title, stars, ratingDate
+From Movie M, Reviewer Rv, Rating Rt
+Where M.mID = Rt.mID and Rv.rID = Rt.rID 
+Order by name, title, stars
+
+-----------------------------------------------------------------------------
+
+Q6: For all cases where the same reviewer rated the same movie twice and gave 
+    it a higher rating the second time, return the reviewer's name and the 
+    title of the movie. 
+
+Select name, title
+From Reviewer Rv, Rating Rt1, Rating Rt2, Movie Mv
+Where Rv.rID = Rt1.rID and Rv.rID = Rt2.rID 
+    and Rt1.mID = Rt2.mID and Rt1.mID = Mv.mID 
+    and Rt1.ratingDate < Rt2.ratingDate 
+    and Rt1.stars < Rt2.stars
+
+-----------------------------------------------------------------------------
+
+Q7: For each movie that has at least one rating, find the highest number of 
+    stars that movie received. Return the movie title and number of stars. 
+    Sort by movie title.
+
+
+
+-----------------------------------------------------------------------------
+
+Q8: For each movie, return the title and the 'rating spread', that is, the 
+    difference between highest and lowest ratings given to that movie. Sort by 
+    rating spread from highest to lowest, then by movie title. 
+
+
+
+-----------------------------------------------------------------------------
+
+Q9: Find the difference between the average rating of movies released before 
+    1980 and the average rating of movies released after 1980. (Make sure to 
+    calculate the average rating for each movie, then the average of those 
+    averages for movies before 1980 and movies after. Don't just calculate the 
+    overall average rating before and after 1980.) 
+
+
+
+-----------------------------------------------------------------------------
