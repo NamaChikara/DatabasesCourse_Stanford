@@ -1,0 +1,231 @@
+The JOIN Family of Operators
+-------------------------------------------------------------------------------
+
+Recall our relations:
+	
+	College(cName, state, enrollment)
+	Student(sID, sName, GPA, sizeHS)
+	Apply(sID, cName, major, decision)
+
+-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
+INNER JOIN
+-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
+Consider
+
+	select distinct sName, major
+	from Student, Apply
+	where Student.sID = Apply.sID;
+
+> Recall that in the terminology of relational algebra, this is a natural join
+between Student and Apply with a projection of the sName and major columns.
+> We could also see it as a theta join on the condition Student.sID = Apply.sID.
+> The theta join operator in SQL is called "inner join":
+
+	select distinct sName, major
+	from Student inner join Apply
+	on Student.sID = Apply.sID;
+
+> In fact, the "inner" designation is not required since the inner join is the 
+default join operator in SQL:
+
+	select distinct sName, major
+	from Student join Apply
+	on Student.sID = Apply.sID;
+-------------------------------------------------------------------------------
+Conditions can sometimes be equivalently put in the on statement and the where
+statement:
+	
+	select sName, GPA
+	from Student join Apply
+	on Student.sID = Apply.sID 
+	   and SizeHS < 1000 and major = 'CS' and cName = 'Stanford';
+
+	select sName, GPA
+	from Student join Apply
+	on Student.sID = Apply.sID 
+	where SizeHS < 1000 and major = 'CS' and cName = 'Stanford';
+
+A convention to use when making the decision on where to put the conditions is 
+that the on statement contains conditions that apply to combinations of the tuples
+and the where statement applies to separate attributes.
+-------------------------------------------------------------------------------
+To join multiple relations, determine whether or not your system requires queries
+to be binary:
+
+	select *
+	from Apply join Student join College
+	on Apply.sID = Student.sID and Student.cName = College.cName;
+
+	select * 
+	from (Apply join Student on Apply.sID = Student.sID) join College
+	on Student.cName = College.cName;
+-------------------------------------------------------------------------------
+NATURAL JOIN
+-------------------------------------------------------------------------------
+The natural join method automatically equates values of common attribute names; 
+it also eliminates those duplicate attribute names in it's result. Thus
+
+	select * 
+	from Apply join Student
+	on Apply.sID = Student.sID;
+
+will have two columns named "sID" while
+
+	select * 
+	from Apply natural join Student;
+
+will not.
+-------------------------------------------------------------------------------
+USING CLAUSE (best practice)
+-------------------------------------------------------------------------------
+While natural join will automatically join along common attributes, we can 
+choose to specify which attributes should be equated:
+
+	select * 
+	from Apply join Student using(sID);
+
+Note that we can only put an attribute in the using clause if it is included
+in each relation.  This practice is helpful siince there's a chance that when
+working with large data sets you could have attributes that have the same name
+but aren't meant to be equated.
+-------------------------------------------------------------------------------
+DOESN'T WORK: USING and ON with a JOIN statement
+-------------------------------------------------------------------------------
+On most SQL systems, you cannot include a using and an on clause with a single
+join statement:
+
+	select * 
+	from Student S1 join Student S2 using(GPA)
+	on S1.sID < S2.sID;
+
+will not work.  We need to use
+	
+	select * 
+	from Student S1 join Student S2 using(GPA)
+	where S1.sID < S2.sID;
+
+to achieve the desired result.
+-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
+OUTER JOIN
+-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
+LEFT OUTER JOIN
+-------------------------------------------------------------------------------
+The left outer join takes any tuples from the relation on the left side of the 
+join, and if they don't have a matching tuple on the right it is still added to
+the result and it is padded with null values.
+
+	select sName, cName
+	from Student left outer join Apply using(sID);
+	
+	sName	|  cName
+	Craig	|  Cornell
+	Craig	|  MIT
+	Doris   |  NULL
+
+Since Doris did not apply to any colleges yet, she is not in the Apply table.
+Using left outer join instead of join means that she still appears in the result.
+-------------------------------------------------------------------------------
+NOTES
+-------------------------------------------------------------------------------
+1) The "outer" keyword is not required in the query:
+
+	select sName, cName
+	from Student left join Apply using(sID);
+
+will output the same result as the previous query.
+
+2) The natural left outer join can also be used:
+
+	select sName, cName
+	from Student natural left join Apply;
+
+since the using(sID) is implicit.  Again, not best practice to go this route.
+-------------------------------------------------------------------------------
+OUTER JOIN using regular SQL WITHOUT join operators
+-------------------------------------------------------------------------------
+We can write
+
+	select sName, sID, cName, major
+	from Student left join Apply using(sID);
+
+using regular SQL:
+
+	select sName, Student.sID, cName, major
+	from Student, Apply
+	where Student.sID = Apply.sID
+	union
+	select sName, sID, NULL, NULL
+	from Student
+	where sID not in (select sID from Apply);
+-------------------------------------------------------------------------------
+RIGHT OUTER JOIN
+-------------------------------------------------------------------------------
+The right outer join takes any tuples from the relation on the right side of the 
+join, and if they don't have a matching tuple on the left it is still added to
+the result and it is padded with null values.
+
+	select sName, cName
+	from Student right join Apply using(sID);
+	
+	sName	|  cName
+	Craig	|  Cornell
+	Craig	|  MIT
+	NULL    |  MIT
+
+Since a student applied to MIT an didn't include their name with their ID #, 
+they are not in the Student table.  Using right join means that they still appear
+in the result.
+-------------------------------------------------------------------------------
+FULL OUTER JOIN
+-------------------------------------------------------------------------------
+The full outer join takes any tuples from the relations on either side of the 
+join, and if they don't have a matching tuple on the opposite side they are still
+added to the result (padded with null values).
+
+	select sName, cName
+	from Student right join Apply using(sID);
+	
+	sName	|  cName
+	Craig	|  Cornell
+	Craig	|  MIT
+	Dorris  |  NULL
+	NULL    |  MIT
+
+Here, Dorris is in the Student table, but not in the Apply table; there is an
+application in the MIT table that does not have a match in the Student table.
+If there were an sID column requested in the select statement, that sID would 
+be included even though it is not in sName's sID column.
+-------------------------------------------------------------------------------
+FULL OUTER JOIN using regular SQL WITHOUT join operators
+-------------------------------------------------------------------------------
+We can write
+
+	select sName, sID, cName, major
+	from Student full join Apply using(sID);
+
+using regular SQL:
+
+	select sName, Student.sID, cName, major	 # matching Student and Apply records
+	from Student, Apply
+	where Student.sID = Apply.sID
+	union
+	select sName, sID, NULL, NULL		 # students who aren't present in Apply
+	from Student
+	where sID not in (select sID from Apply)
+	union
+	select NULL, sID, cName, major		 # records without a matching Student
+	from Apply
+	where sID not in (select sID from Student);
+-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
+ASSOCIATIVITY/COMMUTATIVITY
+-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
+None of the outer joins are either commutative (A op B) = (B op A) or
+associative (A op B) op C = A op (B op C).  Think about order when chaining these
+operations!
+-------------------------------------------------------------------------------
