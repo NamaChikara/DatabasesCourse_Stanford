@@ -44,7 +44,13 @@ Q3: For all cases where A is friends with B, and B is friends with C, add a
     friendships that already exist, or friendships with oneself. (This one is 
     a bit challenging; congratulations if you get it right.) 
 
-
+Insert Into Friend
+Select Distinct F1.ID1, F2.ID2
+From Friend F1 Join Friend F2
+     On F1.ID2 = F2.ID1
+     Where F1.ID1 <> F2.ID2
+           and F1.ID1 not in (Select ID1 From Friend
+                              Where ID2 = F2.ID2);
 
 -----------------------------------------------------------------------------
 
